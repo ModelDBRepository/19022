@@ -1,0 +1,1 @@
+load_file("currentclamp.hoc")	// auto-launch

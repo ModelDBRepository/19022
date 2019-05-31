@@ -1,0 +1,77 @@
+// generates fig 8d from
+// Geiger JR, Lubke J, Roth A, Frotscher M, Jonas P.
+// Submillisecond AMPA receptor-mediated signaling at a principal neuron-interneuron synapse.
+// Neuron. 1997 Jun;18(6):1009-23.
+
+objref volt_vec, slow_peaks, fast_peaks, offset, g
+
+
+proc set_synapses_slow() {
+	mySynapse[2].onset = relat + 20
+	mySynapse[2].tau0 = 0.08	// ms
+	mySynapse[2].tau1 = 1.20	// ms
+	mySynapse[2].gmax = 0.0032	// microSiemens
+	
+	mySynapse[0].onset = 20		// fixed time that other synapse changes relative too
+	mySynapse[0].tau0 = 0.08
+	mySynapse[0].tau1 = 1.20
+	mySynapse[0].gmax = 0.0032
+}
+
+proc set_synapses_fast() {
+	mySynapse[2].onset = relat + 20
+	mySynapse[2].tau0 = 0.08	// ms
+	mySynapse[2].tau1 = 0.20	// ms
+	mySynapse[2].gmax = 0.008	// microSiemens
+	
+	mySynapse[0].onset = 20		// fixed time that other synapse changes relative too
+	mySynapse[0].tau0 = 0.08
+	mySynapse[0].tau1 = 0.20
+	mySynapse[0].gmax = 0.008
+}
+
+// turn off other synapses for this
+	mySynapse[1].gmax = 0.0
+
+
+volt_vec = new Vector()
+volt_vec.record(&soma.v(0.5))
+
+slow_peaks = new Vector()
+fast_peaks = new Vector()
+offset = new Vector()
+
+steps_per_ms =2
+dt = 0.5
+tstop = 43
+// change the 4 in the relat = relat + 4 to have a different offset step size
+for (relat = -20; relat <= 20; relat =relat + 4) {	//loop over relative times between synapses
+
+	set_synapses_slow()
+	init()
+	run()
+	slow_peaks.append(volt_vec.max-volt_vec.min)
+	
+	set_synapses_fast()
+	init()
+	run()
+	fast_peaks.append(volt_vec.max-volt_vec.min)
+	
+	offset.append(relat)
+}
+
+// renormalize peak peaks to one
+
+slow_peaks.div(slow_peaks.max)
+fast_peaks.div(fast_peaks.max)
+
+g = new Graph(0)
+
+fast_peaks.label("Fast Synapses")
+slow_peaks.label("Slow Synapses")
+
+slow_peaks.line(g, offset, 1, 0)
+fast_peaks.line(g, offset, 2, 1)
+
+g.view(-20,0.4,40,.6, 40,40,200,150)
+
